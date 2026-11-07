@@ -491,7 +491,17 @@ html:not(.js) .nav-links { position: static; display: flex; flex-direction: row;
   padding: 0.2rem 0.6rem; border-radius: var(--radius-pill);
   background: var(--blue-pale); color: var(--blue-strong);
 }
-@media (min-width: 768px) { .projects-grid { grid-template-columns: repeat(2, 1fr); gap: var(--space-5); } }
+/* Featured (open-source) project spans the full row */
+.project-card-featured { border-top: 3px solid var(--color-accent); }
+.project-card-featured p:not(.project-metric) { max-width: 75ch; font-size: var(--text-base); }
+.project-footer {
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between;
+  gap: var(--space-4);
+}
+@media (min-width: 768px) {
+  .projects-grid { grid-template-columns: repeat(2, 1fr); gap: var(--space-5); }
+  .project-card-featured { grid-column: 1 / -1; }
+}
 @media (min-width: 1024px) { .projects-grid { grid-template-columns: repeat(3, 1fr); } }
 
 /* ======= EDUCATION ======= */
