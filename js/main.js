@@ -2,172 +2,122 @@
    MAIN.JS — Varun M D Portfolio
    ============================================= */
 
-/* ---- Custom Cursor ---- */
-const cursor = document.getElementById('cursor');
-const cursorFollower = document.getElementById('cursorFollower');
+const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-let mouseX = 0, mouseY = 0;
-let followerX = 0, followerY = 0;
+/* ---- Theme toggle (light by default; remembers an explicit choice) ---- */
+const root = document.documentElement;
+const themeToggle = document.getElementById('themeToggle');
+const themeMeta = document.querySelector('meta[name="theme-color"]');
 
-document.addEventListener('mousemove', e => {
-  mouseX = e.clientX; mouseY = e.clientY;
-  cursor.style.transform = `translate(${mouseX}px, ${mouseY}px)`;
-});
-
-function animateFollower() {
-  followerX += (mouseX - followerX) * 0.12;
-  followerY += (mouseY - followerY) * 0.12;
-  cursorFollower.style.transform = `translate(${followerX}px, ${followerY}px)`;
-  requestAnimationFrame(animateFollower);
+function applyTheme(theme) {
+  root.setAttribute('data-theme', theme);
+  const isDark = theme === 'dark';
+  themeToggle.setAttribute('aria-label', isDark ? 'Switch to light theme' : 'Switch to dark theme');
+  themeToggle.setAttribute('aria-pressed', String(isDark));
+  if (themeMeta) themeMeta.setAttribute('content', isDark ? '#111827' : '#FAFAF7');
 }
-animateFollower();
 
-document.querySelectorAll('a, button, .skill-card, .project-card, .timeline-content').forEach(el => {
-  el.addEventListener('mouseenter', () => cursorFollower.style.transform += ' scale(1.6)');
-  el.addEventListener('mouseleave', () => {});
-});
+if (themeToggle) {
+  themeToggle.hidden = false;
+  applyTheme(root.getAttribute('data-theme') === 'dark' ? 'dark' : 'light');
+  themeToggle.addEventListener('click', () => {
+    const next = root.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+    applyTheme(next);
+    try { localStorage.setItem('theme', next); } catch (e) { /* storage unavailable */ }
+  });
+}
 
-/* ---- Navbar Scroll ---- */
-const nav = document.getElementById('nav');
-window.addEventListener('scroll', () => {
-  nav.classList.toggle('scrolled', window.scrollY > 30);
-});
+/* ---- Header shadow on scroll ---- */
+const header = document.getElementById('siteHeader');
+const onScrollHeader = () => header.classList.toggle('scrolled', window.scrollY > 8);
+window.addEventListener('scroll', onScrollHeader, { passive: true });
+onScrollHeader();
 
-/* ---- Mobile Nav Toggle ---- */
+/* ---- Mobile nav ---- */
 const navToggle = document.getElementById('navToggle');
 const navLinks = document.getElementById('navLinks');
-navToggle.addEventListener('click', () => {
-  navLinks.classList.toggle('open');
+
+function setMenu(open) {
+  navLinks.classList.toggle('open', open);
+  navToggle.setAttribute('aria-expanded', String(open));
+  navToggle.setAttribute('aria-label', open ? 'Close menu' : 'Open menu');
+}
+
+navToggle.addEventListener('click', () => setMenu(navToggle.getAttribute('aria-expanded') !== 'true'));
+navLinks.querySelectorAll('a').forEach(a => a.addEventListener('click', () => setMenu(false)));
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape' && navLinks.classList.contains('open')) { setMenu(false); navToggle.focus(); }
 });
-document.querySelectorAll('.nav-link').forEach(l => l.addEventListener('click', () => navLinks.classList.remove('open')));
+document.addEventListener('click', e => {
+  if (navLinks.classList.contains('open') && !header.contains(e.target)) setMenu(false);
+});
+window.matchMedia('(min-width: 900px)').addEventListener('change', e => { if (e.matches) setMenu(false); });
 
-/* ---- Hero Canvas Particle Network ---- */
-const canvas = document.getElementById('heroCanvas');
-const ctx = canvas.getContext('2d');
-
-function resizeCanvas() {
-  canvas.width = window.innerWidth;
-  canvas.height = window.innerHeight;
-}
-resizeCanvas();
-window.addEventListener('resize', resizeCanvas);
-
-const particles = [];
-const PARTICLE_COUNT = 80;
-
-class Particle {
-  constructor() { this.reset(); }
-  reset() {
-    this.x = Math.random() * canvas.width;
-    this.y = Math.random() * canvas.height;
-    this.vx = (Math.random() - 0.5) * 0.4;
-    this.vy = (Math.random() - 0.5) * 0.4;
-    this.r = Math.random() * 1.5 + 0.5;
-    this.opacity = Math.random() * 0.5 + 0.15;
-  }
-  update() {
-    this.x += this.vx; this.y += this.vy;
-    if (this.x < 0 || this.x > canvas.width) this.vx *= -1;
-    if (this.y < 0 || this.y > canvas.height) this.vy *= -1;
-  }
-  draw() {
-    ctx.beginPath();
-    ctx.arc(this.x, this.y, this.r, 0, Math.PI * 2);
-    ctx.fillStyle = `rgba(124,92,252,${this.opacity})`;
-    ctx.fill();
-  }
-}
-
-for (let i = 0; i < PARTICLE_COUNT; i++) particles.push(new Particle());
-
-function drawLines() {
-  for (let i = 0; i < particles.length; i++) {
-    for (let j = i + 1; j < particles.length; j++) {
-      const dx = particles[i].x - particles[j].x;
-      const dy = particles[i].y - particles[j].y;
-      const dist = Math.sqrt(dx * dx + dy * dy);
-      if (dist < 120) {
-        ctx.beginPath();
-        ctx.moveTo(particles[i].x, particles[i].y);
-        ctx.lineTo(particles[j].x, particles[j].y);
-        ctx.strokeStyle = `rgba(124,92,252,${0.08 * (1 - dist / 120)})`;
-        ctx.lineWidth = 0.5;
-        ctx.stroke();
+/* ---- Scroll reveal ---- */
+const revealEls = document.querySelectorAll('.reveal');
+if (prefersReducedMotion || !('IntersectionObserver' in window)) {
+  revealEls.forEach(el => el.classList.add('visible'));
+} else {
+  const revealObserver = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        entry.target.classList.add('visible');
+        revealObserver.unobserve(entry.target);
       }
-    }
-  }
+    });
+  }, { threshold: 0.1, rootMargin: '0px 0px -40px 0px' });
+  revealEls.forEach(el => revealObserver.observe(el));
 }
 
-function animateCanvas() {
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-  particles.forEach(p => { p.update(); p.draw(); });
-  drawLines();
-  requestAnimationFrame(animateCanvas);
-}
-animateCanvas();
-
-/* ---- Stats Counter ---- */
+/* ---- Stat counters ----
+   The HTML already contains the final values (no-JS / reduced-motion fallback).
+   With motion allowed, count up from 0 once the stats scroll into view. */
 const statNums = document.querySelectorAll('.stat-num');
-const statObserver = new IntersectionObserver((entries) => {
-  entries.forEach(entry => {
-    if (entry.isIntersecting) {
-      const target = parseInt(entry.target.dataset.target);
-      let current = 0;
-      const inc = target / 50;
-      const timer = setInterval(() => {
-        current = Math.min(current + inc, target);
-        entry.target.textContent = Math.round(current);
-        if (current >= target) clearInterval(timer);
-      }, 30);
-      statObserver.unobserve(entry.target);
-    }
-  });
-}, { threshold: 0.5 });
-statNums.forEach(el => statObserver.observe(el));
 
-/* ---- Scroll Reveal ---- */
-const revealEls = document.querySelectorAll('.reveal-up, .reveal-left, .reveal-right');
-const revealObserver = new IntersectionObserver((entries) => {
-  entries.forEach((entry, i) => {
-    if (entry.isIntersecting) {
-      const delay = entry.target.dataset.delay || 0;
-      setTimeout(() => entry.target.classList.add('visible'), parseInt(delay));
-      revealObserver.unobserve(entry.target);
-    }
-  });
-}, { threshold: 0.12 });
-revealEls.forEach(el => revealObserver.observe(el));
-
-/* ---- About 3D Card Tilt ---- */
-const card3d = document.getElementById('about3dCard');
-if (card3d) {
-  const cardInner = card3d.querySelector('.card-inner');
-  card3d.addEventListener('mousemove', e => {
-    const rect = card3d.getBoundingClientRect();
-    const x = e.clientX - rect.left - rect.width / 2;
-    const y = e.clientY - rect.top - rect.height / 2;
-    const rotateX = -(y / rect.height) * 18;
-    const rotateY = (x / rect.width) * 18;
-    cardInner.style.transform = `perspective(600px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale(1.03)`;
-  });
-  card3d.addEventListener('mouseleave', () => {
-    cardInner.style.transform = '';
-  });
+function animateCount(el) {
+  const target = parseFloat(el.dataset.target);
+  const decimals = parseInt(el.dataset.decimals || '0', 10);
+  const duration = 1200;
+  const start = performance.now();
+  const tick = (now) => {
+    const p = Math.min((now - start) / duration, 1);
+    const eased = 1 - Math.pow(1 - p, 3);
+    el.textContent = (target * eased).toFixed(decimals);
+    if (p < 1) requestAnimationFrame(tick);
+    else el.textContent = target.toFixed(decimals);
+  };
+  requestAnimationFrame(tick);
 }
 
-/* ---- Active Nav Link on Scroll ---- */
-const sections = document.querySelectorAll('section[id]');
-const navLinkEls = document.querySelectorAll('.nav-link:not(.nav-cta)');
+if (!prefersReducedMotion && 'IntersectionObserver' in window && statNums.length) {
+  const statsBox = statNums[0].closest('.stats');
+  const statObserver = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        statNums.forEach(animateCount);
+        statObserver.disconnect();
+      }
+    });
+  }, { threshold: 0.4 });
+  statObserver.observe(statsBox);
+}
 
-window.addEventListener('scroll', () => {
-  let current = '';
-  sections.forEach(sec => {
-    if (window.scrollY >= sec.offsetTop - 120) current = sec.id;
-  });
-  navLinkEls.forEach(link => {
-    link.style.color = link.getAttribute('href') === '#' + current ? 'var(--text)' : '';
-  });
-});
+/* ---- Active nav link on scroll ---- */
+const sections = document.querySelectorAll('main section[id]');
+const navLinkEls = document.querySelectorAll('.nav-link');
+if ('IntersectionObserver' in window) {
+  const activeObserver = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (!entry.isIntersecting) return;
+      navLinkEls.forEach(link => {
+        const on = link.getAttribute('href') === '#' + entry.target.id;
+        link.classList.toggle('active', on);
+        if (on) link.setAttribute('aria-current', 'true'); else link.removeAttribute('aria-current');
+      });
+    });
+  }, { rootMargin: '-45% 0px -50% 0px' });
+  sections.forEach(sec => activeObserver.observe(sec));
+}
 
 /* ---- Contact Form ---- */
 const form = document.getElementById('contactForm');
