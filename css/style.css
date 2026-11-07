@@ -18,13 +18,21 @@
   --slate-dark:   #56657A;   /* slate used on #F5F7FB so it still passes AA (5.5:1) */
   --border:       #E2E8F0;
 
+  /* Page backgrounds: multi-tone light blue / blue-grey */
+  --bg-page:      #F5F8FF;   /* primary page background */
+  --bg-tone-a:    #EDF3FF;   /* alternating section: light blue */
+  --bg-tone-b:    #F8FAFC;   /* alternating section: blue-grey */
+  --tint-blue:    37, 99, 235;    /* rgb of --blue, for barely-there radial glows */
+  --tint-violet:  124, 108, 242;  /* soft violet, used only at very low alpha */
+  --section-fade: 160px;          /* height of the soft blend between sections */
+
   /* Semantic roles */
-  --color-bg:          var(--white);
-  --color-bg-alt:      var(--grey-blue);
+  --color-bg:          var(--bg-page);
+  --color-bg-alt:      var(--bg-tone-a);
   --color-surface:     var(--white);
   --color-heading:     var(--navy);
   --color-text:        var(--navy);
-  --color-text-muted:  var(--slate);
+  --color-text-muted:  var(--slate-dark);   /* on tinted backgrounds (5.3:1 or better) */
   --color-accent:      var(--blue);
   --color-accent-hover:var(--blue-strong);
   --color-accent-soft: var(--blue-pale);
@@ -73,8 +81,8 @@
   color-scheme: light;
 }
 
-/* Darker slate on grey-blue backgrounds for AA contrast */
-.section-alt, .hero { --color-text-muted: var(--slate-dark); }
+/* Inside white containers the lighter slate still passes AA (4.76:1) */
+.card, .stats { --color-text-muted: var(--slate); }
 
 /* ======= RESET & BASE ======= */
 *, *::before, *::after { box-sizing: border-box; }
@@ -301,7 +309,10 @@ html:not(.js) .nav-links { position: static; display: flex; flex-direction: row;
 /* ======= HERO ======= */
 .hero {
   padding: var(--space-7) 0 var(--space-7);
-  background: linear-gradient(180deg, var(--white) 0%, var(--grey-blue) 100%);
+  background:
+    radial-gradient(55% 60% at 88% 18%, rgba(var(--tint-violet), 0.07) 0%, transparent 70%),
+    radial-gradient(50% 55% at 8% 0%, rgba(var(--tint-blue), 0.07) 0%, transparent 70%),
+    var(--bg-page);
 }
 .hero-grid { display: grid; gap: var(--space-7); align-items: center; }
 .hero-title {
@@ -401,7 +412,29 @@ html:not(.js) .nav-links { position: static; display: flex; flex-direction: row;
 
 /* ======= SECTIONS ======= */
 .section { padding: var(--space-8) 0; }
-.section-alt { background: var(--color-bg-alt); }
+
+/* Alternating tones. Each section fades in from the previous section's tone
+   over --section-fade, so there are no hard colour edges between sections.
+   Order: hero (page) > about (b) > skills (a) > experience (b) > projects (a) > education (b) */
+.section {
+  --tone: var(--bg-tone-b);
+  --tone-from: var(--bg-tone-a);
+  background: linear-gradient(180deg, var(--tone-from) 0, var(--tone) var(--section-fade));
+}
+.section-alt {
+  --tone: var(--bg-tone-a);
+  --tone-from: var(--bg-tone-b);
+}
+#about { --tone-from: var(--bg-page); }
+
+/* A whisper of colour behind the project grid */
+#projects {
+  background:
+    /* glows sit inside the section and fade out before its edges, so no seams */
+    radial-gradient(40% 25% at 95% 22%, rgba(var(--tint-violet), 0.05) 0%, transparent 70%),
+    radial-gradient(35% 25% at 5% 65%, rgba(var(--tint-blue), 0.05) 0%, transparent 70%),
+    linear-gradient(180deg, var(--tone-from) 0, var(--tone) var(--section-fade));
+}
 @media (min-width: 768px) { .section { padding: var(--space-9) 0; } }
 
 /* ======= ABOUT (split layout) ======= */
@@ -566,7 +599,7 @@ html:not(.js) .nav-links { position: static; display: flex; flex-direction: row;
 .form-feedback.error   { color: var(--color-error); }
 
 /* ======= FOOTER ======= */
-.footer { background: var(--white); border-top: 1px solid var(--color-border); padding: var(--space-6) 0; }
+.footer { background: var(--bg-page); border-top: 1px solid var(--color-border); padding: var(--space-6) 0; }
 .footer-inner {
   display: flex; flex-direction: column; align-items: center; gap: var(--space-4);
   text-align: center;
