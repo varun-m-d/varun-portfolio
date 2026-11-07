@@ -4,34 +4,10 @@
 
 const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-/* ---- Theme toggle (light by default; remembers an explicit choice) ---- */
-const root = document.documentElement;
-const themeToggle = document.getElementById('themeToggle');
-const themeMeta = document.querySelector('meta[name="theme-color"]');
+/* Dark mode was removed; clear any theme saved by the previous version */
+try { localStorage.removeItem('theme'); } catch (e) { /* storage unavailable */ }
 
-function applyTheme(theme) {
-  root.setAttribute('data-theme', theme);
-  const isDark = theme === 'dark';
-  themeToggle.setAttribute('aria-label', isDark ? 'Switch to light theme' : 'Switch to dark theme');
-  themeToggle.setAttribute('aria-pressed', String(isDark));
-  if (themeMeta) themeMeta.setAttribute('content', isDark ? '#111827' : '#FAFAF7');
-}
-
-if (themeToggle) {
-  themeToggle.hidden = false;
-  applyTheme(root.getAttribute('data-theme') === 'dark' ? 'dark' : 'light');
-  themeToggle.addEventListener('click', () => {
-    const next = root.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
-    applyTheme(next);
-    try { localStorage.setItem('theme', next); } catch (e) { /* storage unavailable */ }
-  });
-}
-
-/* ---- Header shadow on scroll ---- */
 const header = document.getElementById('siteHeader');
-const onScrollHeader = () => header.classList.toggle('scrolled', window.scrollY > 8);
-window.addEventListener('scroll', onScrollHeader, { passive: true });
-onScrollHeader();
 
 /* ---- Mobile nav ---- */
 const navToggle = document.getElementById('navToggle');
